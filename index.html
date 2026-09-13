@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Car Soccer</title>
+<style>
+*{box-sizing:border-box}
+body{
+margin:0;
+overflow:hidden;
+background:#071018;
+font-family:Arial,sans-serif;
+}
+canvas{
+display:block;
+width:100vw;
+height:100vh;
+}
+#help{
+position:fixed;
+top:15px;
+left:15px;
+color:white;
+background:#0009;
+padding:10px 14px;
+border-radius:10px;
+font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div id="help">
+W A S D = Drive &nbsp; | &nbsp; Space = Boost &nbsp; | &nbsp; R = Reset
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+function resize(){
+canvas.width=innerWidth;
+canvas.height=innerHeight;
+}
+resize();
+addEventListener("resize",resize);
+
+const keys={};
+addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true;
+if(e.code==="Space") keys.space=true;
+});
+addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+if(e.code==="Space") keys.space=false;
+});
+
+let scoreBlue=0;
+let scoreOrange=0;
+
+const car={
+x:0,y:0,
+angle:0,
+speed:0,
+boost:100
+};
+
+const ball={
+x:0,y:0,
+vx:0,vy:0,
+r:18
+};
+
+function reset(){
+car.x=canvas.width/2;
+car.y=canvas.height/2;
+car.angle=0;
+car.speed=0;
+car.boost=100;
+
+ball.x=canvas.width/2;
+ball.y=canvas.height/2;
+ball.vx=0;
+ball.vy=0;
+}
+
+reset();
+
+function clamp(v,a,b){
+return Math.max(a,Math.min(b,v));
+}
+
+function update(){
+const W=canvas.width;
+const H=canvas.height;
+
+if(keys.w) car.speed+=0.35;
+if(keys.s) car.speed-=0.25;
+
+car.speed*=0.97;
+car.speed=clamp(car.speed,-5,8);
+
+if(keys.a) car.angle-=0.055*(Math.abs(car.speed)/4+0.5);
+if(keys.d) car.angle+=0.055*(Math.abs(car.speed)/4+0.5);
+
+if(keys.space && car.boost>0 && car.speed>0){
+car.speed+=0.35;
+car.boost-=0.8;
+}else{
+car.boost=Math.min(100,car.boost+0.15);
+}
+
+car.x+=Math.cos(car.angle)*car.speed;
+car.y+=Math.sin(car.angle)*car.speed;
+
+// Arena walls
+const margin=45;
+if(car.x<margin){car.x=margin;car.speed*=-0.5}
+if(car.x>W-margin){car.x=W-margin;car.speed*=-0.5}
+if(car.y<margin){car.y=margin;car.speed*=-0.5}
+if(car.y>H-margin){car.y=H-margin;car.speed*=-0.5}
+
+// Ball movement
+ball.x+=ball.vx;
+ball.y+=ball.vy;
+
+ball.vx*=0.985;
+ball.vy*=0.985;
+
+// Ball walls
+if(ball.y<55+ball.r){
+ball.y=55+ball.r;
+ball.vy=Math.abs(ball.vy);
+}
+if(ball.y>H-55-ball.r){
+ball.y=H-55-ball.r;
+ball.vy=-Math.abs(ball.vy);
+}
+
+// Goals
+const goalTop=H/2-85;
+const goalBottom=H/2+85;
+
+if(ball.x<ball.r){
+if(ball.y>goalTop && ball.y<goalBottom){
+scoreOrange++;
+reset();
+}else{
+ball.x=ball.r;
+ball.vx=Math.abs(ball.vx);
+}
+}
+
+if(ball.x>W-ball.r){
+if(ball.y>goalTop && ball.y<goalBottom){
+scoreBlue++;
+reset();
+}else{
+ball.x=W-ball.r;
+ball.vx=-Math.abs(ball.vx);
+}
+}
+
+// Car hits ball
+const dx=ball.x-car.x;
+const dy=ball.y-car.y;
+const dist=Math.hypot(dx,dy);
+
+if(dist<48){
+const nx=dx/(dist||1);
+const ny=dy/(dist||1);
+
+const power=Math.max(5,Math.abs(car.speed)*1.8);
+
+ball.vx=nx*power+Math.cos(car.angle)*car.speed*0.5;
+ball.vy=ny*power+Math.sin(car.angle)*car.speed*0.5;
+
+ball.x=car.x+nx*49;
+ball.y=car.y+ny*49;
+}
+
+if(keys.r) reset();
+}
+
+function drawArena(){
+const W=canvas.width;
+const H=canvas.height;
+
+ctx.fillStyle="#071018";
+ctx.fillRect(0,0,W,H);
+
+// Field
+ctx.fillStyle="#126b45";
+ctx.fillRect(35,35,W-70,H-70);
+
+// Field stripes
+for(let x=35;x<W-35;x+=80){
+ctx.fillStyle=(x/80%2===0)?"#14734a":"#126b45";
+ctx.fillRect(x,35,80,H-70);
+}
+
+// Border
+ctx.strokeStyle="#e8f5ef";
+ctx.lineWidth=5;
+ctx.strokeRect(35,35,W-70,H-70);
+
+// Center line
+ctx.beginPath();
+ctx.moveTo(W/2,35);
+ctx.lineTo(W/2,H-35);
+ctx.stroke();
+
+// Center circle
+ctx.beginPath();
+ctx.arc(W/2,H/2,75,0,Math.PI*2);
+ctx.stroke();
+
+// Goals
+const goalH=170;
+
+ctx.fillStyle="#e97820";
+ctx.fillRect(0,H/2-goalH/2,35,goalH);
+
+ctx.fillStyle="#319cff";
+ctx.fillRect(W-35,H/2-goalH/2,35,goalH);
+
+// Boost pads
+const pads=[
+[100,100],[W-100,100],
+[100,H-100],[W-100,H-100]
+];
+
+pads.forEach(p=>{
+ctx.beginPath();
+ctx.arc(p[0],p[1],14,0,Math.PI*2);
+ctx.fillStyle="#ffd84a";
+ctx.fill();
+});
+}
+
+function drawCar(){
+ctx.save();
+ctx.translate(car.x,car.y);
+ctx.rotate(car.angle);
+
+// Boost flame
+if(keys.space && car.boost>0){
+ctx.fillStyle="#ffb52e";
+ctx.beginPath();
+ctx.moveTo(-27,0);
+ctx.lineTo(-45,-8);
+ctx.lineTo(-39,0);
+ctx.lineTo(-45,8);
+ctx.closePath();
+ctx.fill();
+}
+
+// Car body
+ctx.fillStyle="#ff7a00";
+ctx.roundRect(-25,-14,50,28,8);
+ctx.fill();
+
+// Windows
+ctx.fillStyle="#182d44";
+ctx.fillRect(-7,-10,18,20);
+
+// Wheels
+ctx.fillStyle="#111";
+ctx.fillRect(-18,-18,10,7);
+ctx.fillRect(8,-18,10,7);
+ctx.fillRect(-18,11,10,7);
+ctx.fillRect(8,11,10,7);
+
+ctx.restore();
+}
+
+function drawBall(){
+ctx.beginPath();
+ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+ctx.fillStyle="white";
+ctx.fill();
+
+ctx.strokeStyle="#222";
+ctx.lineWidth=3;
+ctx.stroke();
+
+// Simple soccer pattern
+ctx.fillStyle="#222";
+ctx.beginPath();
+ctx.arc(ball.x,ball.y,6,0,Math.PI*2);
+ctx.fill();
+}
+
+function drawScore(){
+ctx.fillStyle="white";
+ctx.font="bold 42px Arial";
+ctx.textAlign="center";
+ctx.fillText(scoreOrange+" - "+scoreBlue,canvas.width/2,32);
+
+ctx.font="14px Arial";
+ctx.fillText("ORANGE BLUE",canvas.width/2,52);
+
+// Boost meter
+ctx.textAlign="left";
+ctx.fillStyle="#222";
+ctx.fillRect(20,canvas.height-35,160,15);
+
+ctx.fillStyle="#ffd12e";
+ctx.fillRect(20,canvas.height-35,160*(car.boost/100),15);
+
+ctx.fillStyle="white";
+ctx.font="12px Arial";
+ctx.fillText("BOOST",20,canvas.height-42);
+}
+
+function loop(){
+update();
+drawArena();
+drawCar();
+drawBall();
+drawScore();
+requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+
+</body>
+</html>
