@@ -3,19 +3,141 @@
 <head>
 <meta charset="UTF-8">
 <title>Car Soccer</title>
+
 <style>
 *{box-sizing:border-box}
+
 body{
 margin:0;
 overflow:hidden;
 background:#071018;
 font-family:Arial,sans-serif;
+color:white;
 }
+
 canvas{
 display:block;
 width:100vw;
 height:100vh;
 }
+
+button,select{
+font:inherit;
+}
+
+.menu{
+position:fixed;
+inset:0;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(3,8,13,.88);
+z-index:10;
+}
+
+.panel{
+width:min(500px,90vw);
+max-height:90vh;
+overflow:auto;
+background:#111c26;
+border:2px solid #304555;
+border-radius:18px;
+padding:25px;
+text-align:center;
+box-shadow:0 15px 50px #0008;
+}
+
+h1{
+margin-top:0;
+font-size:40px;
+}
+
+h2{
+margin-bottom:8px;
+}
+
+.menuBtn{
+width:100%;
+padding:14px;
+margin:7px 0;
+border:0;
+border-radius:10px;
+background:#247cff;
+color:white;
+font-weight:bold;
+cursor:pointer;
+}
+
+.menuBtn:hover{
+filter:brightness(1.15);
+}
+
+.back{
+background:#344653;
+}
+
+.option{
+background:#1b2b38;
+padding:14px;
+border-radius:10px;
+margin:10px 0;
+text-align:left;
+}
+
+select{
+width:100%;
+padding:10px;
+border-radius:8px;
+background:#243746;
+color:white;
+border:1px solid #506575;
+}
+
+.binding{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin:8px 0;
+}
+
+.binding button{
+background:#304858;
+color:white;
+border:1px solid #617888;
+border-radius:7px;
+padding:7px 12px;
+cursor:pointer;
+}
+
+.carChoices{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.carChoice{
+padding:15px;
+background:#1b2b38;
+border:2px solid transparent;
+border-radius:10px;
+cursor:pointer;
+}
+
+.carChoice.selected{
+border-color:#ffd12e;
+}
+
+.carPreview{
+height:35px;
+width:70px;
+margin:0 auto 8px;
+border-radius:9px;
+}
+
+#gameUI{
+display:none;
+}
+
 #help{
 position:fixed;
 top:15px;
@@ -25,18 +147,160 @@ background:#0009;
 padding:10px 14px;
 border-radius:10px;
 font-size:14px;
+z-index:2;
+}
+
+#pauseBtn{
+position:fixed;
+top:15px;
+right:15px;
+z-index:3;
+padding:10px 15px;
+border:0;
+border-radius:9px;
+background:#0009;
+color:white;
+cursor:pointer;
 }
 </style>
 </head>
+
 <body>
 
-<div id="help">
-W A S D = Drive &nbsp; | &nbsp; Space = Boost &nbsp; | &nbsp; R = Reset
+<div id="mainMenu" class="menu">
+<div class="panel">
+<h1>CAR SOCCER</h1>
+
+<button class="menuBtn" onclick="openBotMenu()">PLAY VS BOT</button>
+<button class="menuBtn" onclick="openCars()">CHANGE CAR</button>
+<button class="menuBtn" onclick="openOptions()">OPTIONS</button>
 </div>
+</div>
+
+
+<div id="botMenu" class="menu" style="display:none">
+<div class="panel">
+
+<h2>PLAY VS BOT</h2>
+
+<div class="option">
+<strong>Difficulty</strong>
+<select id="difficulty">
+<option>Bronze</option>
+<option>Silver</option>
+<option>Gold</option>
+<option>Platinum</option>
+<option>Diamond</option>
+<option>Champion</option>
+<option>Grand Champion</option>
+<option>Supersonic Legend</option>
+</select>
+</div>
+
+<button class="menuBtn" onclick="startGame()">START GAME</button>
+<button class="menuBtn back" onclick="backMain()">BACK</button>
+
+</div>
+</div>
+
+
+<div id="carMenu" class="menu" style="display:none">
+<div class="panel">
+
+<h2>CHOOSE CAR</h2>
+
+<div class="carChoices">
+
+<div class="carChoice selected" onclick="selectCar('Octane',this)">
+<div class="carPreview" style="background:#ff7a00"></div>
+<strong>Octane</strong>
+</div>
+
+<div class="carChoice" onclick="selectCar('Dominus',this)">
+<div class="carPreview" style="background:#e63946;border-radius:5px"></div>
+<strong>Dominus</strong>
+</div>
+
+<div class="carChoice" onclick="selectCar('Fennec',this)">
+<div class="carPreview" style="background:#9b5de5;border-radius:4px"></div>
+<strong>Fennec</strong>
+</div>
+
+<div class="carChoice" onclick="selectCar('Merc',this)">
+<div class="carPreview" style="background:#16a085;border-radius:2px"></div>
+<strong>Merc</strong>
+</div>
+
+</div>
+
+<button class="menuBtn back" onclick="backMain()">BACK</button>
+
+</div>
+</div>
+
+
+<div id="optionsMenu" class="menu" style="display:none">
+<div class="panel">
+
+<h2>OPTIONS</h2>
+
+<div class="option">
+<strong>Controls</strong>
+
+<div class="binding">
+<span>Drive Forward</span>
+<button id="bindW" onclick="changeBinding('forward')">W</button>
+</div>
+
+<div class="binding">
+<span>Drive Backward</span>
+<button id="bindS" onclick="changeBinding('backward')">S</button>
+</div>
+
+<div class="binding">
+<span>Turn Left</span>
+<button id="bindA" onclick="changeBinding('left')">A</button>
+</div>
+
+<div class="binding">
+<span>Turn Right</span>
+<button id="bindD" onclick="changeBinding('right')">D</button>
+</div>
+
+<div class="binding">
+<span>Boost</span>
+<button id="bindSpace" onclick="changeBinding('boost')">SPACE</button>
+</div>
+
+<div class="binding">
+<span>Reset</span>
+<button id="bindR" onclick="changeBinding('reset')">R</button>
+</div>
+
+</div>
+
+<button class="menuBtn" onclick="resetBindings()">RESET BINDINGS</button>
+<button class="menuBtn back" onclick="backMain()">BACK</button>
+
+</div>
+</div>
+
+
+<div id="gameUI">
+
+<div id="help">
+W A S D = Drive | Space = Boost | R = Reset
+</div>
+
+<button id="pauseBtn" onclick="pauseGame()">PAUSE</button>
 
 <canvas id="game"></canvas>
 
+</div>
+
+
 <script>
+
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
@@ -44,41 +308,230 @@ function resize(){
 canvas.width=innerWidth;
 canvas.height=innerHeight;
 }
+
 resize();
 addEventListener("resize",resize);
 
-const keys={};
+
+/* =========================
+MENUS
+========================= */
+
+function hideMenus(){
+document.querySelectorAll(".menu").forEach(x=>x.style.display="none");
+}
+
+function backMain(){
+hideMenus();
+document.getElementById("mainMenu").style.display="flex";
+}
+
+function openBotMenu(){
+hideMenus();
+document.getElementById("botMenu").style.display="flex";
+}
+
+function openCars(){
+hideMenus();
+document.getElementById("carMenu").style.display="flex";
+}
+
+function openOptions(){
+hideMenus();
+document.getElementById("optionsMenu").style.display="flex";
+}
+
+
+/* =========================
+SETTINGS
+========================= */
+
+let bindings={
+forward:"w",
+backward:"s",
+left:"a",
+right:"d",
+boost:" ",
+reset:"r"
+};
+
+let waitingFor=null;
+
+function keyName(key){
+if(key===" ") return "SPACE";
+return key.toUpperCase();
+}
+
+function updateBindingButtons(){
+document.getElementById("bindW").textContent=keyName(bindings.forward);
+document.getElementById("bindS").textContent=keyName(bindings.backward);
+document.getElementById("bindA").textContent=keyName(bindings.left);
+document.getElementById("bindD").textContent=keyName(bindings.right);
+document.getElementById("bindSpace").textContent=keyName(bindings.boost);
+document.getElementById("bindR").textContent=keyName(bindings.reset);
+}
+
+function changeBinding(action){
+waitingFor=action;
+alert("Press the key you want to use.");
+}
+
+function resetBindings(){
+bindings={
+forward:"w",
+backward:"s",
+left:"a",
+right:"d",
+boost:" ",
+reset:"r"
+};
+
+updateBindingButtons();
+}
+
 addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true;
-if(e.code==="Space") keys.space=true;
+
+if(waitingFor){
+
+e.preventDefault();
+
+let key=e.key.toLowerCase();
+
+if(e.code==="Space") key=" ";
+
+bindings[waitingFor]=key;
+
+waitingFor=null;
+
+updateBindingButtons();
+
+return;
+}
+
 });
-addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false;
-if(e.code==="Space") keys.space=false;
+
+
+/* =========================
+CAR SELECTION
+========================= */
+
+let selectedCar="Octane";
+
+function selectCar(carName,element){
+
+selectedCar=carName;
+
+document.querySelectorAll(".carChoice").forEach(x=>{
+x.classList.remove("selected");
 });
+
+element.classList.add("selected");
+}
+
+
+/* =========================
+GAME
+========================= */
+
+let gameRunning=false;
+let paused=false;
 
 let scoreBlue=0;
 let scoreOrange=0;
 
 const car={
-x:0,y:0,
+x:0,
+y:0,
 angle:0,
 speed:0,
 boost:100
 };
 
+const bot={
+x:0,
+y:0,
+angle:Math.PI,
+speed:0,
+boost:100
+};
+
 const ball={
-x:0,y:0,
-vx:0,vy:0,
+x:0,
+y:0,
+vx:0,
+vy:0,
 r:18
 };
 
+
+/* Difficulty settings */
+
+const difficulties={
+"Bronze":{
+speed:2.5,
+reaction:.018,
+accuracy:.25
+},
+
+"Silver":{
+speed:3.2,
+reaction:.025,
+accuracy:.35
+},
+
+"Gold":{
+speed:4,
+reaction:.035,
+accuracy:.45
+},
+
+"Platinum":{
+speed:4.7,
+reaction:.045,
+accuracy:.55
+},
+
+"Diamond":{
+speed:5.3,
+reaction:.055,
+accuracy:.65
+},
+
+"Champion":{
+speed:6,
+reaction:.07,
+accuracy:.75
+},
+
+"Grand Champion":{
+speed:6.7,
+reaction:.085,
+accuracy:.85
+},
+
+"Supersonic Legend":{
+speed:7.5,
+reaction:.11,
+accuracy:.96
+}
+};
+
+let difficultyStats=difficulties.Bronze;
+
+
 function reset(){
-car.x=canvas.width/2;
+
+car.x=canvas.width*.25;
 car.y=canvas.height/2;
 car.angle=0;
 car.speed=0;
 car.boost=100;
+
+bot.x=canvas.width*.75;
+bot.y=canvas.height/2;
+bot.angle=Math.PI;
+bot.speed=0;
+bot.boost=100;
 
 ball.x=canvas.width/2;
 ball.y=canvas.height/2;
@@ -86,245 +539,767 @@ ball.vx=0;
 ball.vy=0;
 }
 
+
+function startGame(){
+
+difficultyStats=difficulties[
+document.getElementById("difficulty").value
+];
+
+scoreBlue=0;
+scoreOrange=0;
+
 reset();
+
+hideMenus();
+
+document.getElementById("gameUI").style.display="block";
+
+gameRunning=true;
+paused=false;
+}
+
+
+function pauseGame(){
+
+if(!gameRunning)return;
+
+paused=!paused;
+
+document.getElementById("pauseBtn").textContent=
+paused?"RESUME":"PAUSE";
+}
+
 
 function clamp(v,a,b){
 return Math.max(a,Math.min(b,v));
 }
 
-function update(){
-const W=canvas.width;
-const H=canvas.height;
 
-if(keys.w) car.speed+=0.35;
-if(keys.s) car.speed-=0.25;
+/* =========================
+KEY INPUT
+========================= */
 
-car.speed*=0.97;
+const keys={};
+
+addEventListener("keydown",e=>{
+keys[e.key.toLowerCase()]=true;
+
+if(e.code==="Space"){
+keys.space=true;
+}
+});
+
+addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+
+if(e.code==="Space"){
+keys.space=false;
+}
+});
+
+
+function pressed(action){
+
+let key=bindings[action];
+
+if(key===" "){
+return keys.space;
+}
+
+return keys[key];
+}
+
+
+/* =========================
+PLAYER UPDATE
+========================= */
+
+function updatePlayer(){
+
+if(pressed("forward"))
+car.speed+=.35;
+
+if(pressed("backward"))
+car.speed-=.25;
+
+car.speed*=.97;
+
 car.speed=clamp(car.speed,-5,8);
 
-if(keys.a) car.angle-=0.055*(Math.abs(car.speed)/4+0.5);
-if(keys.d) car.angle+=0.055*(Math.abs(car.speed)/4+0.5);
+if(pressed("left"))
+car.angle-=.055*(Math.abs(car.speed)/4+.5);
 
-if(keys.space && car.boost>0 && car.speed>0){
-car.speed+=0.35;
-car.boost-=0.8;
+if(pressed("right"))
+car.angle+=.055*(Math.abs(car.speed)/4+.5);
+
+if(pressed("boost") && car.boost>0 && car.speed>0){
+
+car.speed+=.35;
+car.boost-=.8;
+
 }else{
-car.boost=Math.min(100,car.boost+0.15);
+
+car.boost=Math.min(100,car.boost+.15);
+
 }
 
 car.x+=Math.cos(car.angle)*car.speed;
 car.y+=Math.sin(car.angle)*car.speed;
 
-// Arena walls
-const margin=45;
-if(car.x<margin){car.x=margin;car.speed*=-0.5}
-if(car.x>W-margin){car.x=W-margin;car.speed*=-0.5}
-if(car.y<margin){car.y=margin;car.speed*=-0.5}
-if(car.y>H-margin){car.y=H-margin;car.speed*=-0.5}
+keepCarInArena(car);
+}
 
-// Ball movement
+
+/* =========================
+BOT AI
+========================= */
+
+function updateBot(){
+
+const W=canvas.width;
+const H=canvas.height;
+
+let targetX=ball.x;
+let targetY=ball.y;
+
+/* Aim slightly toward player's goal */
+
+targetX+=Math.cos(Math.atan2(
+H/2-ball.y,
+W*.25-ball.x
+))*35;
+
+targetY+=Math.sin(Math.atan2(
+H/2-ball.y,
+W*.25-ball.x
+))*35;
+
+let desired=Math.atan2(
+targetY-bot.y,
+targetX-bot.x
+);
+
+let difference=desired-bot.angle;
+
+while(difference>Math.PI)
+difference-=Math.PI*2;
+
+while(difference<-Math.PI)
+difference+=Math.PI*2;
+
+/* Better bots turn faster */
+
+bot.angle+=clamp(
+difference,
+-difficultyStats.reaction,
+difficultyStats.reaction
+);
+
+bot.speed+=.16;
+
+bot.speed*=.985;
+
+bot.speed=clamp(
+bot.speed,
+-2,
+difficultyStats.speed
+);
+
+/* Boost when chasing */
+
+let distance=Math.hypot(
+ball.x-bot.x,
+ball.y-bot.y
+);
+
+if(
+distance>100 &&
+bot.boost>0 &&
+Math.abs(difference)<.5
+){
+
+bot.speed+=.28;
+bot.boost-=.5;
+
+}else{
+
+bot.boost=Math.min(
+100,
+bot.boost+.15
+);
+
+}
+
+bot.x+=Math.cos(bot.angle)*bot.speed;
+bot.y+=Math.sin(bot.angle)*bot.speed;
+
+keepCarInArena(bot);
+}
+
+
+/* =========================
+ARENA
+========================= */
+
+function keepCarInArena(c){
+
+const W=canvas.width;
+const H=canvas.height;
+
+const margin=45;
+
+if(c.x<margin){
+c.x=margin;
+c.speed*=-.5;
+}
+
+if(c.x>W-margin){
+c.x=W-margin;
+c.speed*=-.5;
+}
+
+if(c.y<margin){
+c.y=margin;
+c.speed*=-.5;
+}
+
+if(c.y>H-margin){
+c.y=H-margin;
+c.speed*=-.5;
+}
+
+}
+
+
+/* =========================
+BALL
+========================= */
+
+function updateBall(){
+
+const W=canvas.width;
+const H=canvas.height;
+
 ball.x+=ball.vx;
 ball.y+=ball.vy;
 
-ball.vx*=0.985;
-ball.vy*=0.985;
+ball.vx*=.985;
+ball.vy*=.985;
 
-// Ball walls
 if(ball.y<55+ball.r){
+
 ball.y=55+ball.r;
 ball.vy=Math.abs(ball.vy);
-}
-if(ball.y>H-55-ball.r){
-ball.y=H-55-ball.r;
-ball.vy=-Math.abs(ball.vy);
+
 }
 
-// Goals
+if(ball.y>H-55-ball.r){
+
+ball.y=H-55-ball.r;
+ball.vy=-Math.abs(ball.vy);
+
+}
+
+
+/* Goals */
+
 const goalTop=H/2-85;
 const goalBottom=H/2+85;
 
 if(ball.x<ball.r){
+
 if(ball.y>goalTop && ball.y<goalBottom){
-scoreOrange++;
+
+scoreBlue++;
+
 reset();
+
 }else{
+
 ball.x=ball.r;
 ball.vx=Math.abs(ball.vx);
+
 }
+
 }
+
 
 if(ball.x>W-ball.r){
+
 if(ball.y>goalTop && ball.y<goalBottom){
-scoreBlue++;
+
+scoreOrange++;
+
 reset();
+
 }else{
+
 ball.x=W-ball.r;
 ball.vx=-Math.abs(ball.vx);
-}
+
 }
 
-// Car hits ball
-const dx=ball.x-car.x;
-const dy=ball.y-car.y;
+}
+
+}
+
+
+/* =========================
+CAR BALL COLLISIONS
+========================= */
+
+function hitBall(c){
+
+const dx=ball.x-c.x;
+const dy=ball.y-c.y;
+
 const dist=Math.hypot(dx,dy);
 
 if(dist<48){
+
 const nx=dx/(dist||1);
 const ny=dy/(dist||1);
 
-const power=Math.max(5,Math.abs(car.speed)*1.8);
+let power=Math.max(
+5,
+Math.abs(c.speed)*1.8
+);
 
-ball.vx=nx*power+Math.cos(car.angle)*car.speed*0.5;
-ball.vy=ny*power+Math.sin(car.angle)*car.speed*0.5;
+/* Bot accuracy */
 
-ball.x=car.x+nx*49;
-ball.y=car.y+ny*49;
+if(c===bot){
+
+power*=difficultyStats.accuracy;
+power+=3;
 }
 
-if(keys.r) reset();
+ball.vx=
+nx*power+
+Math.cos(c.angle)*c.speed*.5;
+
+ball.vy=
+ny*power+
+Math.sin(c.angle)*c.speed*.5;
+
+ball.x=c.x+nx*49;
+ball.y=c.y+ny*49;
+
 }
+
+}
+
+
+/* =========================
+UPDATE
+========================= */
+
+function update(){
+
+if(!gameRunning || paused)return;
+
+updatePlayer();
+updateBot();
+
+updateBall();
+
+hitBall(car);
+hitBall(bot);
+
+if(pressed("reset")){
+reset();
+}
+
+}
+
+
+/* =========================
+DRAW ARENA
+========================= */
 
 function drawArena(){
+
 const W=canvas.width;
 const H=canvas.height;
 
 ctx.fillStyle="#071018";
 ctx.fillRect(0,0,W,H);
 
-// Field
-ctx.fillStyle="#126b45";
-ctx.fillRect(35,35,W-70,H-70);
+/* Field */
 
-// Field stripes
-for(let x=35;x<W-35;x+=80){
-ctx.fillStyle=(x/80%2===0)?"#14734a":"#126b45";
-ctx.fillRect(x,35,80,H-70);
+ctx.fillStyle="#126b45";
+ctx.fillRect(
+35,
+35,
+W-70,
+H-70
+);
+
+
+/* Stripes */
+
+for(
+let x=35;
+x<W-35;
+x+=80
+){
+
+ctx.fillStyle=
+(x/80%2===0)
+?"#14734a"
+:"#126b45";
+
+ctx.fillRect(
+x,
+35,
+80,
+H-70
+);
+
 }
 
-// Border
+
+/* Border */
+
 ctx.strokeStyle="#e8f5ef";
 ctx.lineWidth=5;
-ctx.strokeRect(35,35,W-70,H-70);
 
-// Center line
+ctx.strokeRect(
+35,
+35,
+W-70,
+H-70
+);
+
+
+/* Center line */
+
 ctx.beginPath();
+
 ctx.moveTo(W/2,35);
 ctx.lineTo(W/2,H-35);
+
 ctx.stroke();
 
-// Center circle
+
+/* Center circle */
+
 ctx.beginPath();
-ctx.arc(W/2,H/2,75,0,Math.PI*2);
+
+ctx.arc(
+W/2,
+H/2,
+75,
+0,
+Math.PI*2
+);
+
 ctx.stroke();
 
-// Goals
+
+/* Goals */
+
 const goalH=170;
 
 ctx.fillStyle="#e97820";
-ctx.fillRect(0,H/2-goalH/2,35,goalH);
+
+ctx.fillRect(
+0,
+H/2-goalH/2,
+35,
+goalH
+);
 
 ctx.fillStyle="#319cff";
-ctx.fillRect(W-35,H/2-goalH/2,35,goalH);
 
-// Boost pads
+ctx.fillRect(
+W-35,
+H/2-goalH/2,
+35,
+goalH
+);
+
+
+/* Boost pads */
+
 const pads=[
-[100,100],[W-100,100],
-[100,H-100],[W-100,H-100]
+[100,100],
+[W-100,100],
+[100,H-100],
+[W-100,H-100]
 ];
 
 pads.forEach(p=>{
+
 ctx.beginPath();
-ctx.arc(p[0],p[1],14,0,Math.PI*2);
+
+ctx.arc(
+p[0],
+p[1],
+14,
+0,
+Math.PI*2
+);
+
 ctx.fillStyle="#ffd84a";
+
 ctx.fill();
+
 });
+
 }
 
-function drawCar(){
-ctx.save();
-ctx.translate(car.x,car.y);
-ctx.rotate(car.angle);
 
-// Boost flame
-if(keys.space && car.boost>0){
+/* =========================
+DRAW CAR
+========================= */
+
+function drawCar(c,isBot=false){
+
+ctx.save();
+
+ctx.translate(c.x,c.y);
+ctx.rotate(c.angle);
+
+
+/* Boost flame */
+
+if(
+((isBot && c.boost>0) ||
+(!isBot && pressed("boost")))
+&&
+c.speed>0
+){
+
 ctx.fillStyle="#ffb52e";
+
 ctx.beginPath();
+
 ctx.moveTo(-27,0);
 ctx.lineTo(-45,-8);
 ctx.lineTo(-39,0);
 ctx.lineTo(-45,8);
+
 ctx.closePath();
 ctx.fill();
+
 }
 
-// Car body
-ctx.fillStyle="#ff7a00";
-ctx.roundRect(-25,-14,50,28,8);
+
+/* Car color */
+
+let color="#ff7a00";
+
+if(isBot){
+color="#319cff";
+}
+
+if(!isBot){
+
+if(selectedCar==="Dominus")
+color="#e63946";
+
+if(selectedCar==="Fennec")
+color="#9b5de5";
+
+if(selectedCar==="Merc")
+color="#16a085";
+
+}
+
+
+/* Body */
+
+ctx.fillStyle=color;
+
+if(selectedCar==="Merc" && !isBot){
+
+ctx.fillRect(-27,-17,54,34);
+
+}else{
+
+ctx.beginPath();
+
+ctx.roundRect(
+-25,
+-14,
+50,
+28,
+selectedCar==="Dominus"?5:8
+);
+
 ctx.fill();
 
-// Windows
-ctx.fillStyle="#182d44";
-ctx.fillRect(-7,-10,18,20);
+}
 
-// Wheels
+
+/* Windows */
+
+ctx.fillStyle="#182d44";
+
+ctx.fillRect(
+-7,
+-10,
+18,
+20
+);
+
+
+/* Wheels */
+
 ctx.fillStyle="#111";
+
 ctx.fillRect(-18,-18,10,7);
 ctx.fillRect(8,-18,10,7);
 ctx.fillRect(-18,11,10,7);
 ctx.fillRect(8,11,10,7);
 
 ctx.restore();
+
 }
 
+
+/* =========================
+BALL
+========================= */
+
 function drawBall(){
+
 ctx.beginPath();
-ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);
+
+ctx.arc(
+ball.x,
+ball.y,
+ball.r,
+0,
+Math.PI*2
+);
+
 ctx.fillStyle="white";
 ctx.fill();
 
 ctx.strokeStyle="#222";
 ctx.lineWidth=3;
+
 ctx.stroke();
 
-// Simple soccer pattern
+
 ctx.fillStyle="#222";
+
 ctx.beginPath();
-ctx.arc(ball.x,ball.y,6,0,Math.PI*2);
+
+ctx.arc(
+ball.x,
+ball.y,
+6,
+0,
+Math.PI*2
+);
+
 ctx.fill();
+
 }
+
+
+/* =========================
+SCORE
+========================= */
 
 function drawScore(){
+
 ctx.fillStyle="white";
+
 ctx.font="bold 42px Arial";
+
 ctx.textAlign="center";
-ctx.fillText(scoreOrange+" - "+scoreBlue,canvas.width/2,32);
+
+ctx.fillText(
+scoreOrange+" - "+scoreBlue,
+canvas.width/2,
+32
+);
 
 ctx.font="14px Arial";
-ctx.fillText("ORANGE BLUE",canvas.width/2,52);
 
-// Boost meter
+ctx.fillText(
+"ORANGE BLUE",
+canvas.width/2,
+52
+);
+
+
+/* Boost */
+
 ctx.textAlign="left";
+
 ctx.fillStyle="#222";
-ctx.fillRect(20,canvas.height-35,160,15);
+
+ctx.fillRect(
+20,
+canvas.height-35,
+160,
+15
+);
 
 ctx.fillStyle="#ffd12e";
-ctx.fillRect(20,canvas.height-35,160*(car.boost/100),15);
+
+ctx.fillRect(
+20,
+canvas.height-35,
+160*(car.boost/100),
+15
+);
 
 ctx.fillStyle="white";
+
 ctx.font="12px Arial";
-ctx.fillText("BOOST",20,canvas.height-42);
+
+ctx.fillText(
+"BOOST",
+20,
+canvas.height-42
+);
+
+
+/* Difficulty */
+
+ctx.textAlign="right";
+
+ctx.fillText(
+document.getElementById("difficulty").value,
+canvas.width-20,
+canvas.height-25
+);
+
 }
+
+
+/* =========================
+GAME LOOP
+========================= */
 
 function loop(){
+
 update();
+
+if(gameRunning){
+
 drawArena();
-drawCar();
+drawCar(car,false);
+drawCar(bot,true);
 drawBall();
 drawScore();
-requestAnimationFrame(loop);
+
 }
 
+requestAnimationFrame(loop);
+
+}
+
+updateBindingButtons();
+
 loop();
+
 </script>
 
 </body>
