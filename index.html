@@ -1,190 +1,720 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Car Soccer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Car Soccer 3D</title>
 
 <style>
 *{box-sizing:border-box}
-
-body{
-margin:0;
-overflow:hidden;
-background:#071018;
-font-family:Arial,sans-serif;
-color:white;
+body{margin:0;overflow:hidden;background:#080b10;font-family:Arial;color:white}
+#game{width:100vw;height:100vh;display:block}
+#menu,#panel{
+position:absolute;inset:0;display:flex;flex-direction:column;
+justify-content:center;align-items:center;
+background:linear-gradient(135deg,#07101c,#111827);
 }
-
-canvas{
-display:block;
-width:100vw;
-height:100vh;
-}
-
+#panel{display:none}
+h1{font-size:60px;margin:0 0 35px;text-shadow:0 0 25px #00bfff}
+h2{font-size:40px}
 button,select{
-font:inherit;
+width:290px;padding:15px;margin:6px;border:0;border-radius:10px;
+background:#1b2b40;color:white;font-size:18px;font-weight:bold
 }
-
-.menu{
-position:fixed;
-inset:0;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(3,8,13,.88);
-z-index:10;
+button:hover{background:#29425f}
+#hud{
+display:none;position:absolute;top:15px;left:50%;
+transform:translateX(-50%);text-align:center;z-index:5;
+pointer-events:none
 }
-
-.panel{
-width:min(500px,90vw);
-max-height:90vh;
-overflow:auto;
-background:#111c26;
-border:2px solid #304555;
-border-radius:18px;
-padding:25px;
-text-align:center;
-box-shadow:0 15px 50px #0008;
+#score{font-size:40px;font-weight:bold}
+#timer{font-size:23px}
+#pause{
+display:none;position:absolute;right:15px;top:15px;
+width:100px;padding:10px;z-index:8
 }
-
-h1{
-margin-top:0;
-font-size:40px;
+#boost{
+display:none;position:absolute;bottom:25px;left:25px;
+width:230px;height:22px;border:2px solid white;
+background:#111;z-index:5
 }
-
-h2{
-margin-bottom:8px;
+#boostFill{height:100%;background:#ffd21c;width:100%}
+#boostText{
+position:absolute;bottom:51px;left:25px;font-weight:bold
 }
-
-.menuBtn{
-width:100%;
-padding:14px;
-margin:7px 0;
-border:0;
-border-radius:10px;
-background:#247cff;
-color:white;
-font-weight:bold;
-cursor:pointer;
+#end{
+display:none;position:absolute;inset:0;
+background:rgba(0,0,0,.72);z-index:20;
+flex-direction:column;justify-content:center;align-items:center;
+text-align:center
 }
-
-.menuBtn:hover{
-filter:brightness(1.15);
-}
-
-.back{
-background:#344653;
-}
-
-.option{
-background:#1b2b38;
-padding:14px;
-border-radius:10px;
-margin:10px 0;
-text-align:left;
-}
-
-select{
-width:100%;
-padding:10px;
-border-radius:8px;
-background:#243746;
-color:white;
-border:1px solid #506575;
-}
-
-.binding{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin:8px 0;
-}
-
-.binding button{
-background:#304858;
-color:white;
-border:1px solid #617888;
-border-radius:7px;
-padding:7px 12px;
-cursor:pointer;
-}
-
-.carChoices{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-}
-
-.carChoice{
-padding:15px;
-background:#1b2b38;
-border:2px solid transparent;
-border-radius:10px;
-cursor:pointer;
-}
-
-.carChoice.selected{
-border-color:#ffd12e;
-}
-
-.carPreview{
-height:35px;
-width:70px;
-margin:0 auto 8px;
-border-radius:9px;
-}
-
-#gameUI{
-display:none;
-}
-
-#help{
-position:fixed;
-top:15px;
-left:15px;
-color:white;
-background:#0009;
-padding:10px 14px;
-border-radius:10px;
-font-size:14px;
-z-index:2;
-}
-
-#pauseBtn{
-position:fixed;
-top:15px;
-right:15px;
-z-index:3;
-padding:10px 15px;
-border:0;
-border-radius:9px;
-background:#0009;
-color:white;
-cursor:pointer;
-}
+.small{opacity:.7;margin-top:12px}
 </style>
 </head>
 
 <body>
 
-<div id="mainMenu" class="menu">
-<div class="panel">
-<h1>CAR SOCCER</h1>
-
-<button class="menuBtn" onclick="openBotMenu()">PLAY VS BOT</button>
-<button class="menuBtn" onclick="openCars()">CHANGE CAR</button>
-<button class="menuBtn" onclick="openOptions()">OPTIONS</button>
+<div id="menu">
+<h1>CAR SOCCER 3D</h1>
+<button onclick="openBot()">PLAY VS BOT</button>
+<button onclick="startTraining()">🏋️ TRAINING</button>
+<button onclick="openCars()">🚗 CHANGE CAR</button>
+<button onclick="openOptions()">⚙️ OPTIONS</button>
+<div class="small">WASD • SPACE BOOST • Air Roll • Camera Toggle</div>
 </div>
+
+<div id="panel">
+<h2 id="panelTitle">MENU</h2>
+<div id="panelContent"></div>
+<button onclick="backMenu()">BACK</button>
 </div>
 
+<div id="hud">
+<div id="score">0 - 0</div>
+<div id="timer">5:00</div>
+</div>
 
-<div id="botMenu" class="menu" style="display:none">
-<div class="panel">
+<button id="pause" onclick="togglePause()">PAUSE</button>
 
-<h2>PLAY VS BOT</h2>
+<div id="boost">
+<div id="boostFill"></div>
+</div>
+<div id="boostText">BOOST 100</div>
 
-<div class="option">
-<strong>Difficulty</strong>
+<div id="end">
+<h1 id="endText">YOU WIN!</h1>
+<button onclick="backMenu()">MAIN MENU</button>
+</div>
+
+<canvas id="game"></canvas>
+
+<script type="module">
+
+import * as THREE from
+"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+
+/* =========================
+THREE.JS SETUP
+========================= */
+
+const canvas=document.getElementById("game");
+
+const renderer=new THREE.WebGLRenderer({
+canvas,
+antialias:true
+});
+
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x07101a);
+
+const camera=new THREE.PerspectiveCamera(
+70,
+innerWidth/innerHeight,
+.1,
+300
+);
+
+camera.position.set(0,8,12);
+
+window.addEventListener("resize",()=>{
+camera.aspect=innerWidth/innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(innerWidth,innerHeight);
+});
+
+/* LIGHT */
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x31512f,2));
+
+const sun=new THREE.DirectionalLight(0xffffff,2);
+sun.position.set(20,30,10);
+sun.castShadow=true;
+scene.add(sun);
+
+/* =========================
+GAME VARIABLES
+========================= */
+
+let mode="menu";
+let paused=false;
+
+let timeLeft=300;
+let playerScore=0;
+let botScore=0;
+
+let selectedCar="Octane";
+
+let keys={};
+
+let bindings={
+forward:"w",
+backward:"s",
+left:"a",
+right:"d",
+boost:" ",
+reset:"r",
+airLeft:"q",
+airRight:"e",
+camera:"c"
+};
+
+let cameraToggle=true;
+
+const carColors={
+Octane:0xff6b00,
+Dominus:0xe63939,
+Fennec:0xffc400,
+Merc:0x9b59ff
+};
+
+/* =========================
+CONTROLS
+========================= */
+
+document.addEventListener("keydown",e=>{
+let k=e.key.toLowerCase();
+
+if(k===" ")e.preventDefault();
+
+keys[k]=true;
+
+if(k===bindings.reset &&
+(mode==="game"||mode==="training")){
+resetPositions();
+}
+
+if(k===bindings.camera){
+cameraToggle=!cameraToggle;
+}
+});
+
+document.addEventListener("keyup",e=>{
+keys[e.key.toLowerCase()]=false;
+});
+
+/* =========================
+ARENA
+========================= */
+
+const FIELD_W=50;
+const FIELD_L=90;
+
+function createArena(){
+
+const floor=new THREE.Mesh(
+new THREE.BoxGeometry(FIELD_W,.5,FIELD_L),
+new THREE.MeshStandardMaterial({color:0x16783b})
+);
+
+floor.position.y=-.25;
+floor.receiveShadow=true;
+scene.add(floor);
+
+/* Center line */
+
+const lineMat=new THREE.MeshBasicMaterial({
+color:0xffffff
+});
+
+const line=new THREE.Mesh(
+new THREE.BoxGeometry(.15,.03,FIELD_L),
+lineMat
+);
+
+line.position.y=.02;
+scene.add(line);
+
+/* Center circle */
+
+const ring=new THREE.Mesh(
+new THREE.RingGeometry(7.9,8,.5,64),
+new THREE.MeshBasicMaterial({
+color:0xffffff,
+side:THREE.DoubleSide
+})
+);
+
+ring.rotation.x=-Math.PI/2;
+ring.position.y=.03;
+scene.add(ring);
+
+/* Walls */
+
+const wallMat=new THREE.MeshStandardMaterial({
+color:0x12314a,
+transparent:true,
+opacity:.75
+});
+
+const back1=new THREE.Mesh(
+new THREE.BoxGeometry(FIELD_W,5,.7),wallMat
+);
+back1.position.set(0,2.5,-FIELD_L/2);
+scene.add(back1);
+
+const back2=back1.clone();
+back2.position.z=FIELD_L/2;
+scene.add(back2);
+
+const side1=new THREE.Mesh(
+new THREE.BoxGeometry(.7,5,FIELD_L),
+wallMat
+);
+side1.position.set(-FIELD_W/2,2.5,0);
+scene.add(side1);
+
+const side2=side1.clone();
+side2.position.x=FIELD_W/2;
+scene.add(side2);
+
+/* Goals */
+
+const goalMat1=new THREE.MeshStandardMaterial({
+color:0x2255dd,
+transparent:true,
+opacity:.55
+});
+
+const goalMat2=new THREE.MeshStandardMaterial({
+color:0xdd4422,
+transparent:true,
+opacity:.55
+});
+
+const goal1=new THREE.Mesh(
+new THREE.BoxGeometry(14,4,6),goalMat1
+);
+goal1.position.set(0,2,-FIELD_L/2-3);
+scene.add(goal1);
+
+const goal2=goal1.clone();
+goal2.material=goalMat2;
+goal2.position.z=FIELD_L/2+3;
+scene.add(goal2);
+}
+
+createArena();
+
+/* =========================
+BOOST PADS
+========================= */
+
+let pads=[];
+
+function createBoostPad(x,z,big){
+
+const mesh=new THREE.Mesh(
+new THREE.CylinderGeometry(
+big?1.6:.75,
+big?1.6:.75,
+.15,
+32
+),
+new THREE.MeshStandardMaterial({
+color:big?0xffa600:0xffdf3d,
+emissive:big?0x884400:0x665500
+})
+);
+
+mesh.position.set(x,.1,z);
+scene.add(mesh);
+
+pads.push({
+mesh,
+x,z,
+big,
+amount:big?100:12,
+cooldown:0
+});
+}
+
+for(let x of [-17,0,17]){
+createBoostPad(x,-25,false);
+createBoostPad(x,25,false);
+}
+
+createBoostPad(-22,-38,true);
+createBoostPad(22,-38,true);
+createBoostPad(-22,38,true);
+createBoostPad(22,38,true);
+
+/* =========================
+CAR CREATION
+========================= */
+
+function createCar(type){
+
+const group=new THREE.Group();
+
+const mat=new THREE.MeshStandardMaterial({
+color:carColors[type],
+metalness:.25,
+roughness:.45
+});
+
+const body=new THREE.Mesh(
+new THREE.BoxGeometry(3.2,1,5),
+mat
+);
+
+body.position.y=1;
+body.castShadow=true;
+group.add(body);
+
+const cabin=new THREE.Mesh(
+new THREE.BoxGeometry(2.4,.8,2),
+new THREE.MeshStandardMaterial({
+color:0x111827,
+metalness:.2
+})
+);
+
+cabin.position.set(0,1.65,-.2);
+cabin.castShadow=true;
+group.add(cabin);
+
+const wheelMat=new THREE.MeshStandardMaterial({
+color:0x101010
+});
+
+for(let x of [-1.45,1.45]){
+for(let z of [-1.65,1.65]){
+
+const wheel=new THREE.Mesh(
+new THREE.CylinderGeometry(.55,.55,.45,20),
+wheelMat
+);
+
+wheel.rotation.z=Math.PI/2;
+wheel.position.set(x,.55,z);
+wheel.castShadow=true;
+
+group.add(wheel);
+}
+}
+
+return group;
+}
+
+const player=createCar(selectedCar);
+scene.add(player);
+
+const bot=createCar("Dominus");
+scene.add(bot);
+
+/* =========================
+BALL
+========================= */
+
+const ball=new THREE.Mesh(
+new THREE.SphereGeometry(1,32,32),
+new THREE.MeshStandardMaterial({
+color:0xffffff,
+roughness:.25
+})
+);
+
+ball.castShadow=true;
+scene.add(ball);
+
+let ballVel=new THREE.Vector3();
+
+/* =========================
+PHYSICS
+========================= */
+
+let playerVel=new THREE.Vector3();
+let botVel=new THREE.Vector3();
+
+function resetPositions(){
+
+player.position.set(0,1,30);
+player.rotation.set(0,Math.PI,0);
+
+bot.position.set(0,1,-30);
+bot.rotation.set(0,0,0);
+
+ball.position.set(0,1,0);
+ballVel.set(0,0,0);
+
+playerVel.set(0,0,0);
+botVel.set(0,0,0);
+}
+
+function driveCar(car,vel,dt,isPlayer){
+
+let forward=0;
+
+if(isPlayer){
+
+if(keys[bindings.forward])forward=1;
+if(keys[bindings.backward])forward=-.65;
+
+if(keys[bindings.left])
+car.rotation.y+=3*dt;
+
+if(keys[bindings.right])
+car.rotation.y-=3*dt;
+
+if(keys[bindings.airLeft])
+car.rotation.z+=4*dt;
+
+if(keys[bindings.airRight])
+car.rotation.z-=4*dt;
+
+}else{
+
+const target=ball.position.clone();
+target.y=1;
+
+const dx=target.x-car.position.x;
+const dz=target.z-car.position.z;
+
+const wanted=Math.atan2(dx,dz);
+let diff=wanted-car.rotation.y;
+
+while(diff>Math.PI)diff-=Math.PI*2;
+while(diff<-Math.PI)diff+=Math.PI*2;
+
+car.rotation.y+=Math.max(-2.5*dt,
+Math.min(2.5*dt,diff));
+
+forward=1;
+}
+
+const speed=isPlayer?35:25;
+
+if(forward){
+
+const dir=new THREE.Vector3(
+Math.sin(car.rotation.y),
+0,
+Math.cos(car.rotation.y)
+);
+
+vel.add(dir.multiplyScalar(
+speed*forward*dt
+));
+}
+
+if(isPlayer &&
+keys[bindings.boost] &&
+playerBoost>0){
+
+const dir=new THREE.Vector3(
+Math.sin(car.rotation.y),
+0,
+Math.cos(car.rotation.y)
+);
+
+vel.add(dir.multiplyScalar(55*dt));
+playerBoost-=35*dt;
+}else if(isPlayer){
+
+playerBoost+=12*dt;
+}
+
+if(isPlayer)
+playerBoost=Math.max(0,Math.min(100,playerBoost));
+
+vel.multiplyScalar(.97);
+
+const max=isPlayer?42:30;
+
+if(vel.length()>max)
+vel.setLength(max);
+
+car.position.addScaledVector(vel,dt);
+
+car.position.x=Math.max(-FIELD_W/2+2,
+Math.min(FIELD_W/2-2,car.position.x));
+
+car.position.z=Math.max(-FIELD_L/2+2,
+Math.min(FIELD_L/2-2,car.position.z));
+
+car.position.y=1;
+}
+
+/* =========================
+BALL
+========================= */
+
+function updateBall(dt){
+
+ball.position.addScaledVector(ballVel,dt);
+
+ballVel.multiplyScalar(.992);
+
+if(ball.position.x<-FIELD_W/2+1){
+ball.position.x=-FIELD_W/2+1;
+ballVel.x=Math.abs(ballVel.x);
+}
+
+if(ball.position.x>FIELD_W/2-1){
+ball.position.x=FIELD_W/2-1;
+ballVel.x=-Math.abs(ballVel.x);
+}
+
+/* Side walls */
+
+if(ball.position.z<-FIELD_L/2){
+
+if(Math.abs(ball.position.x)<7){
+
+playerScore++;
+resetPositions();
+return;
+
+}else{
+
+ball.position.z=-FIELD_L/2;
+ballVel.z=Math.abs(ballVel.z);
+}
+}
+
+if(ball.position.z>FIELD_L/2){
+
+if(Math.abs(ball.position.x)<7){
+
+botScore++;
+resetPositions();
+return;
+
+}else{
+
+ball.position.z=FIELD_L/2;
+ballVel.z=-Math.abs(ballVel.z);
+}
+}
+
+collide(player,playerVel);
+
+if(mode==="game")
+collide(bot,botVel);
+
+collectBoost(player);
+
+}
+
+function collide(car,vel){
+
+const dx=ball.position.x-car.position.x;
+const dz=ball.position.z-car.position.z;
+
+const dist=Math.hypot(dx,dz);
+
+if(dist<4){
+
+const nx=dx/(dist||1);
+const nz=dz/(dist||1);
+
+ball.position.x=car.position.x+nx*4;
+ball.position.z=car.position.z+nz*4;
+
+ballVel.x=nx*28+vel.x*.5;
+ballVel.z=nz*28+vel.z*.5;
+}
+}
+
+/* =========================
+BOOST
+========================= */
+
+let playerBoost=100;
+
+function collectBoost(car){
+
+for(const p of pads){
+
+if(p.cooldown>0){
+p.cooldown-=.016;
+continue;
+}
+
+const d=Math.hypot(
+car.position.x-p.x,
+car.position.z-p.z
+);
+
+if(d<3){
+
+playerBoost=Math.min(
+100,
+playerBoost+p.amount
+);
+
+p.cooldown=p.big?8:3;
+p.mesh.visible=false;
+
+setTimeout(()=>{
+p.mesh.visible=true;
+},(p.big?8000:3000));
+}
+}
+}
+
+/* =========================
+CAMERA
+========================= */
+
+function updateCamera(){
+
+if(!cameraToggle){
+
+camera.position.set(
+player.position.x,
+player.position.y+30,
+player.position.z
+);
+
+camera.lookAt(player.position);
+return;
+}
+
+const offset=new THREE.Vector3(
+0,7,-13
+);
+
+offset.applyAxisAngle(
+new THREE.Vector3(0,1,0),
+player.rotation.y
+);
+
+const target=player.position.clone().add(offset);
+
+camera.position.lerp(target,.12);
+
+const look=player.position.clone();
+look.y+=1;
+
+camera.lookAt(look);
+}
+
+/* =========================
+UI
+========================= */
+
+function hideMenus(){
+document.getElementById("menu").style.display="none";
+document.getElementById("panel").style.display="none";
+}
+
+function openBot(){
+
+document.getElementById("menu").style.display="none";
+
+const panel=document.getElementById("panel");
+panel.style.display="flex";
+
+document.getElementById("panelTitle").textContent=
+"CHOOSE BOT";
+
+document.getElementById("panelContent").innerHTML=`
+
 <select id="difficulty">
 <option>Bronze</option>
 <option>Silver</option>
@@ -195,1110 +725,293 @@ cursor:pointer;
 <option>Grand Champion</option>
 <option>Supersonic Legend</option>
 </select>
-</div>
 
-<button class="menuBtn" onclick="startGame()">START GAME</button>
-<button class="menuBtn back" onclick="backMain()">BACK</button>
-
-</div>
-</div>
-
-
-<div id="carMenu" class="menu" style="display:none">
-<div class="panel">
-
-<h2>CHOOSE CAR</h2>
-
-<div class="carChoices">
-
-<div class="carChoice selected" onclick="selectCar('Octane',this)">
-<div class="carPreview" style="background:#ff7a00"></div>
-<strong>Octane</strong>
-</div>
-
-<div class="carChoice" onclick="selectCar('Dominus',this)">
-<div class="carPreview" style="background:#e63946;border-radius:5px"></div>
-<strong>Dominus</strong>
-</div>
-
-<div class="carChoice" onclick="selectCar('Fennec',this)">
-<div class="carPreview" style="background:#9b5de5;border-radius:4px"></div>
-<strong>Fennec</strong>
-</div>
-
-<div class="carChoice" onclick="selectCar('Merc',this)">
-<div class="carPreview" style="background:#16a085;border-radius:2px"></div>
-<strong>Merc</strong>
-</div>
-
-</div>
-
-<button class="menuBtn back" onclick="backMain()">BACK</button>
-
-</div>
-</div>
-
-
-<div id="optionsMenu" class="menu" style="display:none">
-<div class="panel">
-
-<h2>OPTIONS</h2>
-
-<div class="option">
-<strong>Controls</strong>
-
-<div class="binding">
-<span>Drive Forward</span>
-<button id="bindW" onclick="changeBinding('forward')">W</button>
-</div>
-
-<div class="binding">
-<span>Drive Backward</span>
-<button id="bindS" onclick="changeBinding('backward')">S</button>
-</div>
-
-<div class="binding">
-<span>Turn Left</span>
-<button id="bindA" onclick="changeBinding('left')">A</button>
-</div>
-
-<div class="binding">
-<span>Turn Right</span>
-<button id="bindD" onclick="changeBinding('right')">D</button>
-</div>
-
-<div class="binding">
-<span>Boost</span>
-<button id="bindSpace" onclick="changeBinding('boost')">SPACE</button>
-</div>
-
-<div class="binding">
-<span>Reset</span>
-<button id="bindR" onclick="changeBinding('reset')">R</button>
-</div>
-
-</div>
-
-<button class="menuBtn" onclick="resetBindings()">RESET BINDINGS</button>
-<button class="menuBtn back" onclick="backMain()">BACK</button>
-
-</div>
-</div>
-
-
-<div id="gameUI">
-
-<div id="help">
-W A S D = Drive | Space = Boost | R = Reset
-</div>
-
-<button id="pauseBtn" onclick="pauseGame()">PAUSE</button>
-
-<canvas id="game"></canvas>
-
-</div>
-
-
-<script>
-
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-
-function resize(){
-canvas.width=innerWidth;
-canvas.height=innerHeight;
-}
-
-resize();
-addEventListener("resize",resize);
-
-
-/* =========================
-MENUS
-========================= */
-
-function hideMenus(){
-document.querySelectorAll(".menu").forEach(x=>x.style.display="none");
-}
-
-function backMain(){
-hideMenus();
-document.getElementById("mainMenu").style.display="flex";
-}
-
-function openBotMenu(){
-hideMenus();
-document.getElementById("botMenu").style.display="flex";
+<button onclick="startBot()">START MATCH</button>
+`;
 }
 
 function openCars(){
-hideMenus();
-document.getElementById("carMenu").style.display="flex";
+
+document.getElementById("menu").style.display="none";
+
+const panel=document.getElementById("panel");
+panel.style.display="flex";
+
+document.getElementById("panelTitle").textContent=
+"CHOOSE CAR";
+
+document.getElementById("panelContent").innerHTML=`
+
+<button onclick="selectCar('Octane')">OCTANE</button>
+<button onclick="selectCar('Dominus')">DOMINUS</button>
+<button onclick="selectCar('Fennec')">FENNEC</button>
+<button onclick="selectCar('Merc')">MERC</button>
+`;
 }
 
 function openOptions(){
-hideMenus();
-document.getElementById("optionsMenu").style.display="flex";
+
+document.getElementById("menu").style.display="none";
+
+const panel=document.getElementById("panel");
+panel.style.display="flex";
+
+document.getElementById("panelTitle").textContent=
+"CONTROLS";
+
+document.getElementById("panelContent").innerHTML=`
+
+${bindButton("forward","Forward")}
+${bindButton("backward","Backward")}
+${bindButton("left","Left")}
+${bindButton("right","Right")}
+${bindButton("boost","Boost")}
+${bindButton("reset","Reset")}
+${bindButton("airLeft","Air Roll Left")}
+${bindButton("airRight","Air Roll Right")}
+${bindButton("camera","Camera Toggle")}
+
+<button onclick="resetBindings()">
+RESET CONTROLS
+</button>
+`;
 }
 
+function bindButton(id,name){
 
-/* =========================
-SETTINGS
-========================= */
+let value=bindings[id];
 
-let bindings={
-forward:"w",
-backward:"s",
-left:"a",
-right:"d",
-boost:" ",
-reset:"r"
-};
+if(value===" ")value="SPACE";
 
-let waitingFor=null;
-
-function keyName(key){
-if(key===" ") return "SPACE";
-return key.toUpperCase();
+return `
+<button onclick="changeBinding('${id}')">
+${name}: ${value.toUpperCase()}
+</button>
+`;
 }
 
-function updateBindingButtons(){
-document.getElementById("bindW").textContent=keyName(bindings.forward);
-document.getElementById("bindS").textContent=keyName(bindings.backward);
-document.getElementById("bindA").textContent=keyName(bindings.left);
-document.getElementById("bindD").textContent=keyName(bindings.right);
-document.getElementById("bindSpace").textContent=keyName(bindings.boost);
-document.getElementById("bindR").textContent=keyName(bindings.reset);
-}
+function changeBinding(id){
 
-function changeBinding(action){
-waitingFor=action;
-alert("Press the key you want to use.");
+const key=prompt(
+"Press the new key for "+id+
+"\\nPress SPACE for spacebar."
+);
+
+if(key===null||key==="")return;
+
+bindings[id]=key===" "?" ":key.toLowerCase();
+
+openOptions();
 }
 
 function resetBindings(){
+
 bindings={
 forward:"w",
 backward:"s",
 left:"a",
 right:"d",
 boost:" ",
-reset:"r"
+reset:"r",
+airLeft:"q",
+airRight:"e",
+camera:"c"
 };
 
-updateBindingButtons();
+openOptions();
 }
 
-addEventListener("keydown",e=>{
+function selectCar(type){
 
-if(waitingFor){
+selectedCar=type;
 
-e.preventDefault();
+scene.remove(player);
 
-let key=e.key.toLowerCase();
+player=createCar(selectedCar);
 
-if(e.code==="Space") key=" ";
+scene.add(player);
 
-bindings[waitingFor]=key;
-
-waitingFor=null;
-
-updateBindingButtons();
-
-return;
+backMenu();
 }
 
-});
+function startBot(){
 
-
-/* =========================
-CAR SELECTION
-========================= */
-
-let selectedCar="Octane";
-
-function selectCar(carName,element){
-
-selectedCar=carName;
-
-document.querySelectorAll(".carChoice").forEach(x=>{
-x.classList.remove("selected");
-});
-
-element.classList.add("selected");
-}
-
-
-/* =========================
-GAME
-========================= */
-
-let gameRunning=false;
-let paused=false;
-
-let scoreBlue=0;
-let scoreOrange=0;
-
-const car={
-x:0,
-y:0,
-angle:0,
-speed:0,
-boost:100
-};
-
-const bot={
-x:0,
-y:0,
-angle:Math.PI,
-speed:0,
-boost:100
-};
-
-const ball={
-x:0,
-y:0,
-vx:0,
-vy:0,
-r:18
-};
-
-
-/* Difficulty settings */
-
-const difficulties={
-"Bronze":{
-speed:2.5,
-reaction:.018,
-accuracy:.25
-},
-
-"Silver":{
-speed:3.2,
-reaction:.025,
-accuracy:.35
-},
-
-"Gold":{
-speed:4,
-reaction:.035,
-accuracy:.45
-},
-
-"Platinum":{
-speed:4.7,
-reaction:.045,
-accuracy:.55
-},
-
-"Diamond":{
-speed:5.3,
-reaction:.055,
-accuracy:.65
-},
-
-"Champion":{
-speed:6,
-reaction:.07,
-accuracy:.75
-},
-
-"Grand Champion":{
-speed:6.7,
-reaction:.085,
-accuracy:.85
-},
-
-"Supersonic Legend":{
-speed:7.5,
-reaction:.11,
-accuracy:.96
-}
-};
-
-let difficultyStats=difficulties.Bronze;
-
-
-function reset(){
-
-car.x=canvas.width*.25;
-car.y=canvas.height/2;
-car.angle=0;
-car.speed=0;
-car.boost=100;
-
-bot.x=canvas.width*.75;
-bot.y=canvas.height/2;
-bot.angle=Math.PI;
-bot.speed=0;
-bot.boost=100;
-
-ball.x=canvas.width/2;
-ball.y=canvas.height/2;
-ball.vx=0;
-ball.vy=0;
-}
-
-
-function startGame(){
-
-difficultyStats=difficulties[
-document.getElementById("difficulty").value
-];
-
-scoreBlue=0;
-scoreOrange=0;
-
-reset();
+mode="game";
+timeLeft=300;
+playerScore=0;
+botScore=0;
+paused=false;
 
 hideMenus();
 
-document.getElementById("gameUI").style.display="block";
+document.getElementById("hud").style.display="block";
+document.getElementById("pause").style.display="block";
+document.getElementById("boost").style.display="block";
 
-gameRunning=true;
-paused=false;
+resetPositions();
 }
 
+function startTraining(){
 
-function pauseGame(){
+mode="training";
+timeLeft=Infinity;
+playerScore=0;
+botScore=0;
+paused=false;
 
-if(!gameRunning)return;
+hideMenus();
+
+document.getElementById("hud").style.display="block";
+document.getElementById("pause").style.display="block";
+document.getElementById("boost").style.display="block";
+
+document.getElementById("timer").textContent="TRAINING";
+
+resetPositions();
+}
+
+function backMenu(){
+
+mode="menu";
+paused=false;
+
+document.getElementById("menu").style.display="flex";
+document.getElementById("panel").style.display="none";
+document.getElementById("hud").style.display="none";
+document.getElementById("pause").style.display="none";
+document.getElementById("boost").style.display="none";
+document.getElementById("end").style.display="none";
+}
+
+function togglePause(){
 
 paused=!paused;
 
-document.getElementById("pauseBtn").textContent=
+document.getElementById("pause").textContent=
 paused?"RESUME":"PAUSE";
 }
-
-
-function clamp(v,a,b){
-return Math.max(a,Math.min(b,v));
-}
-
-
-/* =========================
-KEY INPUT
-========================= */
-
-const keys={};
-
-addEventListener("keydown",e=>{
-keys[e.key.toLowerCase()]=true;
-
-if(e.code==="Space"){
-keys.space=true;
-}
-});
-
-addEventListener("keyup",e=>{
-keys[e.key.toLowerCase()]=false;
-
-if(e.code==="Space"){
-keys.space=false;
-}
-});
-
-
-function pressed(action){
-
-let key=bindings[action];
-
-if(key===" "){
-return keys.space;
-}
-
-return keys[key];
-}
-
-
-/* =========================
-PLAYER UPDATE
-========================= */
-
-function updatePlayer(){
-
-if(pressed("forward"))
-car.speed+=.35;
-
-if(pressed("backward"))
-car.speed-=.25;
-
-car.speed*=.97;
-
-car.speed=clamp(car.speed,-5,8);
-
-if(pressed("left"))
-car.angle-=.055*(Math.abs(car.speed)/4+.5);
-
-if(pressed("right"))
-car.angle+=.055*(Math.abs(car.speed)/4+.5);
-
-if(pressed("boost") && car.boost>0 && car.speed>0){
-
-car.speed+=.35;
-car.boost-=.8;
-
-}else{
-
-car.boost=Math.min(100,car.boost+.15);
-
-}
-
-car.x+=Math.cos(car.angle)*car.speed;
-car.y+=Math.sin(car.angle)*car.speed;
-
-keepCarInArena(car);
-}
-
-
-/* =========================
-BOT AI
-========================= */
-
-function updateBot(){
-
-const W=canvas.width;
-const H=canvas.height;
-
-let targetX=ball.x;
-let targetY=ball.y;
-
-/* Aim slightly toward player's goal */
-
-targetX+=Math.cos(Math.atan2(
-H/2-ball.y,
-W*.25-ball.x
-))*35;
-
-targetY+=Math.sin(Math.atan2(
-H/2-ball.y,
-W*.25-ball.x
-))*35;
-
-let desired=Math.atan2(
-targetY-bot.y,
-targetX-bot.x
-);
-
-let difference=desired-bot.angle;
-
-while(difference>Math.PI)
-difference-=Math.PI*2;
-
-while(difference<-Math.PI)
-difference+=Math.PI*2;
-
-/* Better bots turn faster */
-
-bot.angle+=clamp(
-difference,
--difficultyStats.reaction,
-difficultyStats.reaction
-);
-
-bot.speed+=.16;
-
-bot.speed*=.985;
-
-bot.speed=clamp(
-bot.speed,
--2,
-difficultyStats.speed
-);
-
-/* Boost when chasing */
-
-let distance=Math.hypot(
-ball.x-bot.x,
-ball.y-bot.y
-);
-
-if(
-distance>100 &&
-bot.boost>0 &&
-Math.abs(difference)<.5
-){
-
-bot.speed+=.28;
-bot.boost-=.5;
-
-}else{
-
-bot.boost=Math.min(
-100,
-bot.boost+.15
-);
-
-}
-
-bot.x+=Math.cos(bot.angle)*bot.speed;
-bot.y+=Math.sin(bot.angle)*bot.speed;
-
-keepCarInArena(bot);
-}
-
-
-/* =========================
-ARENA
-========================= */
-
-function keepCarInArena(c){
-
-const W=canvas.width;
-const H=canvas.height;
-
-const margin=45;
-
-if(c.x<margin){
-c.x=margin;
-c.speed*=-.5;
-}
-
-if(c.x>W-margin){
-c.x=W-margin;
-c.speed*=-.5;
-}
-
-if(c.y<margin){
-c.y=margin;
-c.speed*=-.5;
-}
-
-if(c.y>H-margin){
-c.y=H-margin;
-c.speed*=-.5;
-}
-
-}
-
-
-/* =========================
-BALL
-========================= */
-
-function updateBall(){
-
-const W=canvas.width;
-const H=canvas.height;
-
-ball.x+=ball.vx;
-ball.y+=ball.vy;
-
-ball.vx*=.985;
-ball.vy*=.985;
-
-if(ball.y<55+ball.r){
-
-ball.y=55+ball.r;
-ball.vy=Math.abs(ball.vy);
-
-}
-
-if(ball.y>H-55-ball.r){
-
-ball.y=H-55-ball.r;
-ball.vy=-Math.abs(ball.vy);
-
-}
-
-
-/* Goals */
-
-const goalTop=H/2-85;
-const goalBottom=H/2+85;
-
-if(ball.x<ball.r){
-
-if(ball.y>goalTop && ball.y<goalBottom){
-
-scoreBlue++;
-
-reset();
-
-}else{
-
-ball.x=ball.r;
-ball.vx=Math.abs(ball.vx);
-
-}
-
-}
-
-
-if(ball.x>W-ball.r){
-
-if(ball.y>goalTop && ball.y<goalBottom){
-
-scoreOrange++;
-
-reset();
-
-}else{
-
-ball.x=W-ball.r;
-ball.vx=-Math.abs(ball.vx);
-
-}
-
-}
-
-}
-
-
-/* =========================
-CAR BALL COLLISIONS
-========================= */
-
-function hitBall(c){
-
-const dx=ball.x-c.x;
-const dy=ball.y-c.y;
-
-const dist=Math.hypot(dx,dy);
-
-if(dist<48){
-
-const nx=dx/(dist||1);
-const ny=dy/(dist||1);
-
-let power=Math.max(
-5,
-Math.abs(c.speed)*1.8
-);
-
-/* Bot accuracy */
-
-if(c===bot){
-
-power*=difficultyStats.accuracy;
-power+=3;
-}
-
-ball.vx=
-nx*power+
-Math.cos(c.angle)*c.speed*.5;
-
-ball.vy=
-ny*power+
-Math.sin(c.angle)*c.speed*.5;
-
-ball.x=c.x+nx*49;
-ball.y=c.y+ny*49;
-
-}
-
-}
-
-
-/* =========================
-UPDATE
-========================= */
-
-function update(){
-
-if(!gameRunning || paused)return;
-
-updatePlayer();
-updateBot();
-
-updateBall();
-
-hitBall(car);
-hitBall(bot);
-
-if(pressed("reset")){
-reset();
-}
-
-}
-
-
-/* =========================
-DRAW ARENA
-========================= */
-
-function drawArena(){
-
-const W=canvas.width;
-const H=canvas.height;
-
-ctx.fillStyle="#071018";
-ctx.fillRect(0,0,W,H);
-
-/* Field */
-
-ctx.fillStyle="#126b45";
-ctx.fillRect(
-35,
-35,
-W-70,
-H-70
-);
-
-
-/* Stripes */
-
-for(
-let x=35;
-x<W-35;
-x+=80
-){
-
-ctx.fillStyle=
-(x/80%2===0)
-?"#14734a"
-:"#126b45";
-
-ctx.fillRect(
-x,
-35,
-80,
-H-70
-);
-
-}
-
-
-/* Border */
-
-ctx.strokeStyle="#e8f5ef";
-ctx.lineWidth=5;
-
-ctx.strokeRect(
-35,
-35,
-W-70,
-H-70
-);
-
-
-/* Center line */
-
-ctx.beginPath();
-
-ctx.moveTo(W/2,35);
-ctx.lineTo(W/2,H-35);
-
-ctx.stroke();
-
-
-/* Center circle */
-
-ctx.beginPath();
-
-ctx.arc(
-W/2,
-H/2,
-75,
-0,
-Math.PI*2
-);
-
-ctx.stroke();
-
-
-/* Goals */
-
-const goalH=170;
-
-ctx.fillStyle="#e97820";
-
-ctx.fillRect(
-0,
-H/2-goalH/2,
-35,
-goalH
-);
-
-ctx.fillStyle="#319cff";
-
-ctx.fillRect(
-W-35,
-H/2-goalH/2,
-35,
-goalH
-);
-
-
-/* Boost pads */
-
-const pads=[
-[100,100],
-[W-100,100],
-[100,H-100],
-[W-100,H-100]
-];
-
-pads.forEach(p=>{
-
-ctx.beginPath();
-
-ctx.arc(
-p[0],
-p[1],
-14,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle="#ffd84a";
-
-ctx.fill();
-
-});
-
-}
-
-
-/* =========================
-DRAW CAR
-========================= */
-
-function drawCar(c,isBot=false){
-
-ctx.save();
-
-ctx.translate(c.x,c.y);
-ctx.rotate(c.angle);
-
-
-/* Boost flame */
-
-if(
-((isBot && c.boost>0) ||
-(!isBot && pressed("boost")))
-&&
-c.speed>0
-){
-
-ctx.fillStyle="#ffb52e";
-
-ctx.beginPath();
-
-ctx.moveTo(-27,0);
-ctx.lineTo(-45,-8);
-ctx.lineTo(-39,0);
-ctx.lineTo(-45,8);
-
-ctx.closePath();
-ctx.fill();
-
-}
-
-
-/* Car color */
-
-let color="#ff7a00";
-
-if(isBot){
-color="#319cff";
-}
-
-if(!isBot){
-
-if(selectedCar==="Dominus")
-color="#e63946";
-
-if(selectedCar==="Fennec")
-color="#9b5de5";
-
-if(selectedCar==="Merc")
-color="#16a085";
-
-}
-
-
-/* Body */
-
-ctx.fillStyle=color;
-
-if(selectedCar==="Merc" && !isBot){
-
-ctx.fillRect(-27,-17,54,34);
-
-}else{
-
-ctx.beginPath();
-
-ctx.roundRect(
--25,
--14,
-50,
-28,
-selectedCar==="Dominus"?5:8
-);
-
-ctx.fill();
-
-}
-
-
-/* Windows */
-
-ctx.fillStyle="#182d44";
-
-ctx.fillRect(
--7,
--10,
-18,
-20
-);
-
-
-/* Wheels */
-
-ctx.fillStyle="#111";
-
-ctx.fillRect(-18,-18,10,7);
-ctx.fillRect(8,-18,10,7);
-ctx.fillRect(-18,11,10,7);
-ctx.fillRect(8,11,10,7);
-
-ctx.restore();
-
-}
-
-
-/* =========================
-BALL
-========================= */
-
-function drawBall(){
-
-ctx.beginPath();
-
-ctx.arc(
-ball.x,
-ball.y,
-ball.r,
-0,
-Math.PI*2
-);
-
-ctx.fillStyle="white";
-ctx.fill();
-
-ctx.strokeStyle="#222";
-ctx.lineWidth=3;
-
-ctx.stroke();
-
-
-ctx.fillStyle="#222";
-
-ctx.beginPath();
-
-ctx.arc(
-ball.x,
-ball.y,
-6,
-0,
-Math.PI*2
-);
-
-ctx.fill();
-
-}
-
-
-/* =========================
-SCORE
-========================= */
-
-function drawScore(){
-
-ctx.fillStyle="white";
-
-ctx.font="bold 42px Arial";
-
-ctx.textAlign="center";
-
-ctx.fillText(
-scoreOrange+" - "+scoreBlue,
-canvas.width/2,
-32
-);
-
-ctx.font="14px Arial";
-
-ctx.fillText(
-"ORANGE BLUE",
-canvas.width/2,
-52
-);
-
-
-/* Boost */
-
-ctx.textAlign="left";
-
-ctx.fillStyle="#222";
-
-ctx.fillRect(
-20,
-canvas.height-35,
-160,
-15
-);
-
-ctx.fillStyle="#ffd12e";
-
-ctx.fillRect(
-20,
-canvas.height-35,
-160*(car.boost/100),
-15
-);
-
-ctx.fillStyle="white";
-
-ctx.font="12px Arial";
-
-ctx.fillText(
-"BOOST",
-20,
-canvas.height-42
-);
-
-
-/* Difficulty */
-
-ctx.textAlign="right";
-
-ctx.fillText(
-document.getElementById("difficulty").value,
-canvas.width-20,
-canvas.height-25
-);
-
-}
-
 
 /* =========================
 GAME LOOP
 ========================= */
 
-function loop(){
+let last=performance.now();
 
-update();
-
-if(gameRunning){
-
-drawArena();
-drawCar(car,false);
-drawCar(bot,true);
-drawBall();
-drawScore();
-
-}
+function loop(now){
 
 requestAnimationFrame(loop);
 
+const dt=Math.min(
+(now-last)/1000,
+.033
+);
+
+last=now;
+
+if(mode==="game"||mode==="training"){
+
+if(!paused){
+
+if(mode==="game"){
+
+timeLeft-=dt;
+
+if(timeLeft<=0){
+
+timeLeft=0;
+endGame();
+}
 }
 
-updateBindingButtons();
+if(mode!=="finished"){
 
-loop();
+driveCar(
+player,
+playerVel,
+dt,
+true
+);
+
+if(mode==="game"){
+
+driveCar(
+bot,
+botVel,
+dt,
+false
+);
+}
+
+updateBall(dt);
+updateCamera();
+
+updateHUD();
+updateBoost();
+}
+}
+}
+
+renderer.render(scene,camera);
+}
+
+function updateHUD(){
+
+document.getElementById("score").textContent=
+playerScore+" - "+botScore;
+
+if(mode==="training"){
+
+document.getElementById("timer").textContent=
+"TRAINING";
+
+return;
+}
+
+let m=Math.floor(timeLeft/60);
+let s=Math.floor(timeLeft%60);
+
+document.getElementById("timer").textContent=
+m+":"+(s<10?"0":"")+s;
+}
+
+function updateBoost(){
+
+document.getElementById("boostFill").style.width=
+playerBoost+"%";
+
+document.getElementById("boostText").textContent=
+"BOOST "+Math.round(playerBoost);
+}
+
+function endGame(){
+
+if(mode==="finished")return;
+
+mode="finished";
+paused=true;
+
+let text="DRAW!";
+
+if(playerScore>botScore)
+text="YOU WIN 🏆";
+
+if(playerScore<botScore)
+text="BOT WINS";
+
+document.getElementById("endText").innerHTML=
+text+
+"<br><span style='font-size:25px'>"+
+playerScore+" - "+botScore+
+"</span>";
+
+document.getElementById("end").style.display="flex";
+document.getElementById("pause").style.display="none";
+}
+
+/* START */
+
+resetPositions();
+requestAnimationFrame(loop);
 
 </script>
 
